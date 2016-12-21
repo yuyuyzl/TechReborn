@@ -110,6 +110,8 @@ public class ModBlocks {
 
 	public static Block ironFence;
 	public static Block flare;
+	
+	public static Block fluidPipe;
 
 	public static void init() {
 		thermalGenerator = new BlockThermalGenerator();
@@ -431,6 +433,9 @@ public class ModBlocks {
 		//		GameRegistry.registerTileEntity(TileEntityFlare.class, "TileEntityFlareTR");
 
 		registerOreDict();
+		ModBlocks.fluidPipe = new BlockFluidPipe();
+		ModBlocks.registerBlock(ModBlocks.fluidPipe, "fluidpipe");
+		GameRegistry.registerTileEntity(TileFluidPipe.class, "TileFluidPipe");
 		Core.logHelper.info("TechReborns Blocks Loaded");
 	}
 

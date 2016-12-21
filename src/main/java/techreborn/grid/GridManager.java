@@ -1,5 +1,6 @@
 package techreborn.grid;
 
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
 import java.util.ArrayList;
@@ -25,120 +26,167 @@ public class GridManager {
 		this.cableGrids = new HashMap<>();
 	}
 
-	public PipeGrid addPipeGrid(int identifier, int transferCapacity) {
-		return (PipeGrid) this.cableGrids.put(identifier, new PipeGrid(identifier, transferCapacity));
+	public PipeGrid addPipeGrid(final int identifier, final int transferCapacity) {
+		final PipeGrid grid = new PipeGrid(identifier, transferCapacity);
+
+		this.cableGrids.put(identifier, grid);
+		return grid;
 	}
 
-	public CableGrid addGrid(int identifier) {
-		return this.cableGrids.put(identifier, new CableGrid(identifier));
+	public CableGrid addGrid(final int identifier) {
+		final CableGrid grid = new CableGrid(identifier);
+
+		this.cableGrids.put(identifier, grid);
+		return grid;
 	}
 
-	public CableGrid removeGrid(int identifier) {
+	public CableGrid removeGrid(final int identifier) {
 		return this.cableGrids.remove(identifier);
 	}
 
-	public boolean hasGrid(int identifier) {
+	public boolean hasGrid(final int identifier) {
 		return this.cableGrids.containsKey(identifier);
 	}
 
-	public CableGrid getGrid(int identifier) {
+	public CableGrid getGrid(final int identifier) {
 		return this.cableGrids.get(identifier);
 	}
 
 	public int getNextID() {
 		int i = 0;
-		while (cableGrids.containsKey(i))
+		while (this.cableGrids.containsKey(i))
 			i++;
 		return i;
 	}
 
 	public void tickGrids() {
-		long start = System.currentTimeMillis();
-		Iterator<CableGrid> cableGrid = this.cableGrids.values().iterator();
+		final long start = System.currentTimeMillis();
+		final Iterator<CableGrid> cableGrid = this.cableGrids.values().iterator();
 
 		while (cableGrid.hasNext()) {
-			CableGrid grid = cableGrid.next();
+			final CableGrid grid = cableGrid.next();
 
 			if (grid.isDirty()) {
 			}
 			grid.tick();
 		}
-		long elapsed = (System.currentTimeMillis() - start);
-		System.out.println("Grids ticking took: " + elapsed + " ms. (" + (50.0 / elapsed) + "% of tick time)");
+		final long elapsed = System.currentTimeMillis() - start;
+		System.out.println("Grids ticking took: " + elapsed + " ms. (" + 50.0 / elapsed + "% of tick time)");
 	}
 
-	void checkMerge(CableGrid grid, ITileCable modified) {
-		for (EnumFacing facing : modified.getConnections()) {
-			if (modified.getConnected(facing).getGrid() != grid.getIdentifier())
-				mergeGrids(grid, this.getGrid(modified.getConnected(facing).getGrid()));
-		}
-	}
+	public void connectCable(final ITileCable added) {
+		for (final EnumFacing facing : EnumFacing.VALUES) {
 
-	void mergeGrids(CableGrid destination, CableGrid source) {
-		destination.addCables(source.getCables());
-		destination.addInputs(source.getInputs());
-		destination.addOutputs(source.getOutputs());
-
-		source.getCables().forEach(cable -> cable.setGrid(destination.getIdentifier()));
-		this.cableGrids.remove(source.getIdentifier());
-	}
-
-	void pruneOrphans(CableGrid grid, ITileCable cable) {
-
-		if (cable.getConnections()[0] != null) {
-			List<ITileCable> founds = new ArrayList<>(grid.getCables());
-			founds.removeAll(explore(cable, cable.getConnected(cable.getConnections()[0])));
-
-			if (!founds.isEmpty()) {
-				this.cableGrids.remove(grid.getIdentifier());
-				grid.getCables().forEach(node -> node.setGrid(-1));
-
-				for (EnumFacing facing : cable.getConnections()) {
-					ITileCable facingCable = cable.getConnected(facing);
-
-					if (facingCable.getGrid() == -1) {
-
-						CableGrid newGrid = this.addGrid(this.getNextID());
-						newGrid.applyData(grid);
-
-						List<ITileCable> exploreds = this.explore(null, facingCable);
-						exploreds.forEach(explored -> {
-
-							if (explored != null) {
-								newGrid.addCable(explored);
-								if (explored.isInput())
-									newGrid.addInput(explored);
-								if (explored.isOutput())
-									newGrid.addOutput(explored);
-								explored.setGrid(newGrid.getIdentifier());
-							}
-						});
-					}
-				}
+			final TileEntity adjacent = added.getWorld().getTileEntity(added.getPos().add(facing.getDirectionVec()));
+			if (adjacent != null && adjacent instanceof ITileCable) {
+				added.connect(facing, (ITileCable) adjacent);
+				((ITileCable) adjacent).connect(facing.getOpposite(), added);
 			}
 		}
+		for (final EnumFacing facing : added.getConnections()) {
+			final ITileCable adjacent = added.getConnected(facing);
+
+			if (adjacent.getGrid() != -1) {
+				if (added.getGrid() == -1) {
+					added.setGrid(adjacent.getGrid());
+					GridManager.getInstance().getGrid(added.getGrid()).addCable(added);
+				} else
+					GridManager.getInstance().mergeGrids(GridManager.getInstance().getGrid(added.getGrid()),
+							GridManager.getInstance().getGrid(adjacent.getGrid()));
+			}
+		}
+
+		if (added.getGrid() == -1) {
+			added.setGrid(
+					GridManager.getInstance().addPipeGrid(GridManager.getInstance().getNextID(), 256).getIdentifier());
+			GridManager.getInstance().getGrid(added.getGrid()).addCable(added);
+		}
 	}
 
-	private List<ITileCable> explore(ITileCable ignore, ITileCable cable) {
-		List<ITileCable> openset = new ArrayList<>();
+	public void disconnectCable(final ITileCable removed) {
 
-		List<ITileCable> frontier = new ArrayList<>();
+		if (removed.getGrid() != -1) {
+			if (removed.getConnections().length != 0) {
 
-		frontier.add(cable);
-		while (frontier.isEmpty()) {
-			Iterator<ITileCable> iterator = frontier.iterator();
-			while (iterator.hasNext()) {
-				ITileCable current = iterator.next();
+				for (final EnumFacing facing : removed.getConnections())
+					removed.getConnected(facing).disconnect(facing.getOpposite());
+
+				if (removed.getConnections().length == 1)
+					this.getGrid(removed.getGrid()).removeCable(removed);
+				else {
+
+					this.getGrid(removed.getGrid()).removeCable(removed);
+					if (!this.getOrphans(this.getGrid(removed.getGrid()), removed).isEmpty()) {
+						for (final EnumFacing facing : removed.getConnections())
+							removed.getConnected(facing).setGrid(-1);
+						this.removeGrid(removed.getGrid());
+						for (final EnumFacing facing : removed.getConnections()) {
+							if (removed.getConnected(facing).getGrid() == -1) {
+								this.exploreGrid(this.addGrid(this.getNextID()), removed.getConnected(facing));
+							}
+						}
+					}
+				}
+			} else
+				this.removeGrid(removed.getGrid());
+		}
+	}
+
+	public void mergeGrids(final CableGrid destination, final CableGrid source) {
+		if (destination.getIdentifier() != source.getIdentifier()) {
+			destination.addCables(source.getCables());
+			destination.addInputs(source.getInputs());
+			destination.addOutputs(source.getOutputs());
+
+			source.getCables().forEach(cable -> cable.setGrid(destination.getIdentifier()));
+			this.cableGrids.remove(source.getIdentifier());
+		}
+	}
+
+	List<ITileCable> getOrphans(final CableGrid grid, final ITileCable cable) {
+		final List<ITileCable> toScan = new ArrayList<>(grid.getCables());
+
+		final List<ITileCable> openset = new ArrayList<>();
+		final List<ITileCable> frontier = new ArrayList<>();
+
+		frontier.add(cable.getConnected(cable.getConnections()[0]));
+		while (!frontier.isEmpty()) {
+			final List<ITileCable> frontierCpy = new ArrayList<>(frontier);
+			for (final ITileCable current : frontierCpy) {
 
 				openset.add(current);
-				for (EnumFacing facing : current.getConnections()) {
-					ITileCable facingCable = current.getConnected(facing);
-					if (facingCable != ignore && !openset.contains(facingCable) && !frontier.contains(facingCable))
+				toScan.remove(current);
+				for (final EnumFacing facing : current.getConnections()) {
+					final ITileCable facingCable = current.getConnected(facing);
+					if (!openset.contains(facingCable) && !frontier.contains(facingCable))
 						frontier.add(facingCable);
 				}
 				frontier.remove(current);
 			}
 		}
-		return openset;
+		return toScan;
+	}
+
+	private void exploreGrid(final CableGrid grid, final ITileCable cable) {
+		final List<ITileCable> openset = new ArrayList<>();
+
+		final List<ITileCable> frontier = new ArrayList<>();
+
+		frontier.add(cable);
+		while (!frontier.isEmpty()) {
+			final List<ITileCable> frontierCpy = new ArrayList<>(frontier);
+			for (final ITileCable current : frontierCpy) {
+
+				openset.add(current);
+				current.setGrid(grid.getIdentifier());
+				grid.addCable(current);
+				for (final EnumFacing facing : current.getConnections()) {
+					final ITileCable facingCable = current.getConnected(facing);
+					if (!openset.contains(facingCable) && !frontier.contains(facingCable))
+						frontier.add(facingCable);
+				}
+				frontier.remove(current);
+			}
+		}
 	}
 }

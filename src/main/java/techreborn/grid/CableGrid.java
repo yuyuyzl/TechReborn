@@ -31,89 +31,82 @@ public class CableGrid {
 
 	}
 
-	void applyData(CableGrid grid) {
+	void applyData(final CableGrid grid) {
 
 	}
 
-	public void addCable(@Nonnull ITileCable cable) {
-		if (this.cables.add(cable)) {
-			this.markDirty();
-			GridManager.getInstance().checkMerge(this, cable);
-		}
+	public void addCable(@Nonnull final ITileCable cable) {
+		this.cables.add(cable);
 	}
 
-	public void addCables(Collection<ITileCable> cables) {
+	public void addCables(final Collection<ITileCable> cables) {
 		cables.forEach(this::addCable);
 	}
 
-	public boolean removeCable(ITileCable cable) {
+	public boolean removeCable(final ITileCable cable) {
 		if (this.inputs.contains(cable))
 			this.inputs.remove(cable);
 		if (this.outputs.contains(cable))
 			this.outputs.remove(cable);
-		boolean removed = this.cables.remove(cable);
-
-		if (removed)
-			GridManager.getInstance().pruneOrphans(this, cable);
-		return removed;
+		return this.cables.remove(cable);
 	}
 
-	public void removeCables(Collection<ITileCable> cables) {
+	public void removeCables(final Collection<ITileCable> cables) {
 		cables.forEach(this::removeCable);
 	}
 
-	public boolean hasCable(ITileCable cable) {
+	public boolean hasCable(final ITileCable cable) {
 		return this.cables.contains(cable);
 	}
 
-	public void addInput(ITileCable input) {
+	public void addInput(final ITileCable input) {
 		this.inputs.add(input);
 		this.addCable(input);
 	}
 
-	public void addInputs(Collection<ITileCable> inputs) {
+	public void addInputs(final Collection<ITileCable> inputs) {
 		inputs.forEach(this::addInput);
 	}
 
-	public boolean removeInput(ITileCable input) {
+	public boolean removeInput(final ITileCable input) {
 		return this.inputs.remove(input);
 	}
 
-	public boolean hasInput(ITileCable input) {
+	public boolean hasInput(final ITileCable input) {
 		return this.inputs.contains(input);
 	}
 
-	public void addOutput(ITileCable output) {
+	public void addOutput(final ITileCable output) {
 		this.outputs.add(output);
 		this.addCable(output);
 	}
 
-	public void addOutputs(Collection<ITileCable> outputs) {
+	public void addOutputs(final Collection<ITileCable> outputs) {
 		outputs.forEach(this::addOutput);
 	}
 
-	public boolean removeOutput(ITileCable output) {
+	public boolean removeOutput(final ITileCable output) {
 		return this.outputs.remove(output);
 	}
 
-	public boolean hasOutput(ITileCable output) {
+	public boolean hasOutput(final ITileCable output) {
 		return this.outputs.contains(output);
 	}
 
 	public int getIdentifier() {
-		return identifier;
+		return this.identifier;
 	}
 
 	public HashSet<ITileCable> getCables() {
-		return cables;
+		return this.cables;
 	}
 
 	public HashSet<ITileCable> getInputs() {
-		return inputs;
+		return this.inputs;
 	}
 
 	public HashSet<ITileCable> getOutputs() {
-		return outputs;
+		return this.outputs;
 	}
 
 	public void markDirty() {
@@ -126,46 +119,46 @@ public class CableGrid {
 
 	@Override
 	public String toString() {
-		return "CableGrid [identifier=" + identifier + ", cables=" + cables + ", inputs=" + inputs + ", outputs="
-				+ outputs + "]";
+		return "CableGrid [identifier=" + this.identifier + ", cables=" + this.cables + ", inputs=" + this.inputs
+				+ ", outputs=" + this.outputs + "]";
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((cables == null) ? 0 : cables.hashCode());
-		result = prime * result + identifier;
-		result = prime * result + ((inputs == null) ? 0 : inputs.hashCode());
-		result = prime * result + ((outputs == null) ? 0 : outputs.hashCode());
+		result = prime * result + (this.cables == null ? 0 : this.cables.hashCode());
+		result = prime * result + this.identifier;
+		result = prime * result + (this.inputs == null ? 0 : this.inputs.hashCode());
+		result = prime * result + (this.outputs == null ? 0 : this.outputs.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		CableGrid other = (CableGrid) obj;
-		if (cables == null) {
+		final CableGrid other = (CableGrid) obj;
+		if (this.cables == null) {
 			if (other.cables != null)
 				return false;
-		} else if (!cables.equals(other.cables))
+		} else if (!this.cables.equals(other.cables))
 			return false;
-		if (identifier != other.identifier)
+		if (this.identifier != other.identifier)
 			return false;
-		if (inputs == null) {
+		if (this.inputs == null) {
 			if (other.inputs != null)
 				return false;
-		} else if (!inputs.equals(other.inputs))
+		} else if (!this.inputs.equals(other.inputs))
 			return false;
-		if (outputs == null) {
+		if (this.outputs == null) {
 			if (other.outputs != null)
 				return false;
-		} else if (!outputs.equals(other.outputs))
+		} else if (!this.outputs.equals(other.outputs))
 			return false;
 		return true;
 	}

@@ -15,10 +15,6 @@ public interface ITileCable {
 
 	void setGrid(int gridIdentifier);
 
-	boolean isInput();
-
-	boolean isOutput();
-
 	void connect(EnumFacing facing, ITileCable to);
 
 	void disconnect(EnumFacing facing);

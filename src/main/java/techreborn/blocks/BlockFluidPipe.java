@@ -27,6 +27,7 @@ public class BlockFluidPipe extends BlockMachineBase {
 	@Override
 	public void neighborChanged(final IBlockState state, final World w, final BlockPos pos, final Block block,
 			final BlockPos posNeighbor) {
+		((TileFluidPipe) w.getTileEntity(pos)).scanFluidHandlers(posNeighbor);
 	}
 
 	@Override

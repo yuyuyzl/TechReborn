@@ -89,17 +89,15 @@ public class GridManager {
 			if (adjacent.getGrid() != -1) {
 				if (added.getGrid() == -1) {
 					added.setGrid(adjacent.getGrid());
-					GridManager.getInstance().getGrid(added.getGrid()).addCable(added);
-				} else
-					GridManager.getInstance().mergeGrids(GridManager.getInstance().getGrid(added.getGrid()),
-							GridManager.getInstance().getGrid(adjacent.getGrid()));
+					this.getGrid(added.getGrid()).addCable(added);
+				} else if (this.getGrid(added.getGrid()).canMerge(this.getGrid(adjacent.getGrid())))
+					this.mergeGrids(this.getGrid(added.getGrid()), this.getGrid(adjacent.getGrid()));
 			}
 		}
 
 		if (added.getGrid() == -1) {
-			added.setGrid(
-					GridManager.getInstance().addPipeGrid(GridManager.getInstance().getNextID(), 256).getIdentifier());
-			GridManager.getInstance().getGrid(added.getGrid()).addCable(added);
+			added.setGrid(this.addPipeGrid(this.getNextID(), 256).getIdentifier());
+			this.getGrid(added.getGrid()).addCable(added);
 		}
 	}
 
@@ -122,7 +120,12 @@ public class GridManager {
 						this.removeGrid(removed.getGrid());
 						for (final EnumFacing facing : removed.getConnections()) {
 							if (removed.getConnected(facing).getGrid() == -1) {
-								this.exploreGrid(this.addGrid(this.getNextID()), removed.getConnected(facing));
+
+								final CableGrid newGrid = this.addGrid(this.getNextID());
+								newGrid.applyData(this.getGrid(removed.getGrid()));
+
+								this.exploreGrid(newGrid, removed.getConnected(facing));
+								newGrid.onSplit(this.getGrid(removed.getGrid()));
 							}
 						}
 					}
@@ -133,14 +136,11 @@ public class GridManager {
 	}
 
 	public void mergeGrids(final CableGrid destination, final CableGrid source) {
-		if (destination.getIdentifier() != source.getIdentifier()) {
-			destination.addCables(source.getCables());
-			destination.addInputs(source.getInputs());
-			destination.addOutputs(source.getOutputs());
+		destination.addCables(source.getCables());
 
-			source.getCables().forEach(cable -> cable.setGrid(destination.getIdentifier()));
-			this.cableGrids.remove(source.getIdentifier());
-		}
+		source.getCables().forEach(cable -> cable.setGrid(destination.getIdentifier()));
+		this.cableGrids.remove(source.getIdentifier());
+		destination.onMerge(source);
 	}
 
 	List<ITileCable> getOrphans(final CableGrid grid, final ITileCable cable) {

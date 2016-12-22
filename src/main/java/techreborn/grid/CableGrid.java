@@ -12,15 +12,10 @@ public class CableGrid {
 
 	private final HashSet<ITileCable> cables;
 
-	private final HashSet<ITileCable> inputs;
-	private final HashSet<ITileCable> outputs;
-
 	public CableGrid(final int identifier) {
 		this.identifier = identifier;
 
 		this.cables = new HashSet<>();
-		this.inputs = new HashSet<>();
-		this.outputs = new HashSet<>();
 	}
 
 	void tick() {
@@ -35,6 +30,33 @@ public class CableGrid {
 
 	}
 
+	boolean canMerge(final CableGrid grid) {
+		if (grid.getIdentifier() != this.getIdentifier())
+			return true;
+		return false;
+	}
+
+	/**
+	 * Called on the destination grid after the merging has occurred.
+	 *
+	 * @param the
+	 *            source grid
+	 */
+	void onMerge(final CableGrid grid) {
+
+	}
+
+	/**
+	 * Called after a grid splitting has occurred, each new fragment will
+	 * receive this event.
+	 *
+	 * @param the
+	 *            grid source grid before splitting.
+	 */
+	void onSplit(final CableGrid grid) {
+
+	}
+
 	public void addCable(@Nonnull final ITileCable cable) {
 		this.cables.add(cable);
 	}
@@ -44,10 +66,6 @@ public class CableGrid {
 	}
 
 	public boolean removeCable(final ITileCable cable) {
-		if (this.inputs.contains(cable))
-			this.inputs.remove(cable);
-		if (this.outputs.contains(cable))
-			this.outputs.remove(cable);
 		return this.cables.remove(cable);
 	}
 
@@ -59,54 +77,12 @@ public class CableGrid {
 		return this.cables.contains(cable);
 	}
 
-	public void addInput(final ITileCable input) {
-		this.inputs.add(input);
-		this.addCable(input);
-	}
-
-	public void addInputs(final Collection<ITileCable> inputs) {
-		inputs.forEach(this::addInput);
-	}
-
-	public boolean removeInput(final ITileCable input) {
-		return this.inputs.remove(input);
-	}
-
-	public boolean hasInput(final ITileCable input) {
-		return this.inputs.contains(input);
-	}
-
-	public void addOutput(final ITileCable output) {
-		this.outputs.add(output);
-		this.addCable(output);
-	}
-
-	public void addOutputs(final Collection<ITileCable> outputs) {
-		outputs.forEach(this::addOutput);
-	}
-
-	public boolean removeOutput(final ITileCable output) {
-		return this.outputs.remove(output);
-	}
-
-	public boolean hasOutput(final ITileCable output) {
-		return this.outputs.contains(output);
-	}
-
 	public int getIdentifier() {
 		return this.identifier;
 	}
 
 	public HashSet<ITileCable> getCables() {
 		return this.cables;
-	}
-
-	public HashSet<ITileCable> getInputs() {
-		return this.inputs;
-	}
-
-	public HashSet<ITileCable> getOutputs() {
-		return this.outputs;
 	}
 
 	public void markDirty() {
@@ -119,8 +95,7 @@ public class CableGrid {
 
 	@Override
 	public String toString() {
-		return "CableGrid [identifier=" + this.identifier + ", cables=" + this.cables + ", inputs=" + this.inputs
-				+ ", outputs=" + this.outputs + "]";
+		return "CableGrid [identifier=" + this.identifier + ", cables=" + this.cables + "]";
 	}
 
 	@Override
@@ -129,8 +104,6 @@ public class CableGrid {
 		int result = 1;
 		result = prime * result + (this.cables == null ? 0 : this.cables.hashCode());
 		result = prime * result + this.identifier;
-		result = prime * result + (this.inputs == null ? 0 : this.inputs.hashCode());
-		result = prime * result + (this.outputs == null ? 0 : this.outputs.hashCode());
 		return result;
 	}
 
@@ -149,16 +122,6 @@ public class CableGrid {
 		} else if (!this.cables.equals(other.cables))
 			return false;
 		if (this.identifier != other.identifier)
-			return false;
-		if (this.inputs == null) {
-			if (other.inputs != null)
-				return false;
-		} else if (!this.inputs.equals(other.inputs))
-			return false;
-		if (this.outputs == null) {
-			if (other.outputs != null)
-				return false;
-		} else if (!this.outputs.equals(other.outputs))
 			return false;
 		return true;
 	}

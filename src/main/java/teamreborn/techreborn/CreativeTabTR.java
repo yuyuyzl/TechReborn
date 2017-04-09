@@ -1,9 +1,8 @@
-package teamreborn.techreborn.client;
+package teamreborn.techreborn;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import teamreborn.techreborn.TechReborn;
 
 /**
  * Created by Gigabit101 on 08/04/2017.
